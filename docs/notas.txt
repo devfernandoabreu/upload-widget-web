@@ -1,2 +1,7 @@
 pnpm create vite@latest .
 https://tailwindcss.com/docs/installation/using-vite
+pnpm i lucide-react
+pnpm i tailwind-variants
+pnpm i @radix-ui/react-collapsible
+pnpm i @radix-ui/react-progress
+pnpm i motion
