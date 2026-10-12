@@ -5,3 +5,5 @@ pnpm i tailwind-variants
 pnpm i @radix-ui/react-collapsible
 pnpm i @radix-ui/react-progress
 pnpm i motion
+pnpm i zustand
+pnpm i immer
