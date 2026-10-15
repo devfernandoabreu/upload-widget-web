@@ -4,6 +4,7 @@ import { Download, ImageUp, Link2, RefreshCcw, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useUploads, type Upload } from "../store/uploads";
 import { formatBytes } from "../utils/format-bytes";
+import { useEffect, useState } from "react";
 
 interface UploadWidgetUploadItemProps {
   uploadId: string;
@@ -18,20 +19,29 @@ export function UploadWidgetUploadItem({
   const retryUpload = useUploads((store) => store.retryUpload);
 
   const progress = Math.min(
-    upload.originalSizeInBytes
+    upload.compressedSizeInBytes
       ? Math.round(
-          (upload.uploadSizeInBytes * 100) / upload.originalSizeInBytes,
+          (upload.uploadSizeInBytes * 100) / upload.compressedSizeInBytes,
         )
       : 0,
     100,
   );
+
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+
+    const timeout = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timeout);
+  }, [copied]);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="p-3 rounded-lg flex flex-col gap-3 shadow-shape-content bg-white/2 relative overflow-hidden"
+      className="p-3 rounded-lg flex flex-col gap-3 shadow-shape-content bg-white/2 relative"
     >
       <div className="flex flex-col gap-1">
         <span className="text-xs font-medium flex items-center gap-1">
@@ -43,10 +53,20 @@ export function UploadWidgetUploadItem({
           <span className="line-through">{formatBytes(upload.file.size)}</span>
           <div className="size-1 rounded-full bg-zinc-700" />
           <span>
-            300KB
-            <span className="text-green-400 ml-1">-94%</span>
+            {upload.compressedSizeInBytes !== undefined && (
+              <span className="text-green-400 ml-1">
+                -
+                {Math.round(
+                  ((upload.originalSizeInBytes - upload.compressedSizeInBytes) *
+                    100) /
+                    upload.originalSizeInBytes,
+                )}
+                %
+              </span>
+            )}
           </span>
           <div className="size-1 rounded-full bg-zinc-700" />
+
           {upload.status === "success" && <span>100%</span>}
           {upload.status === "progress" && <span>{progress}%</span>}
           {upload.status === "error" && (
@@ -72,15 +92,46 @@ export function UploadWidgetUploadItem({
       </Progress.Root>
 
       <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-        <Button size="icon-sm">
-          <Download className="size-4" strokeWidth={1.5} />
-          <span className="sr-only">Download compressed image</span>
+        <Button
+          size="icon-sm"
+          aria-disabled={upload.status !== "success"}
+          asChild
+        >
+          <a href={upload.remoteUrl} target="_blank">
+            <Download className="size-4" strokeWidth={1.5} />
+            <span className="sr-only">Download compressed image</span>
+          </a>
         </Button>
 
-        <Button size="icon-sm">
-          <Link2 className="size-4" strokeWidth={1.5} />
-          <span className="sr-only">Copy remote URL</span>
-        </Button>
+        <div className="relative">
+          {copied && (
+            <span
+              role="status"
+              className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-zinc-700 px-2 py-1 text-xxs text-zinc-100 shadow-sm"
+            >
+              Copiado!
+              <span className="absolute left-1/2 top-full size-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-zinc-700" />
+            </span>
+          )}
+
+          <Button
+            size="icon-sm"
+            disabled={!upload.remoteUrl}
+            onClick={async () => {
+              if (!upload.remoteUrl) return;
+
+              try {
+                await navigator.clipboard.writeText(upload.remoteUrl);
+                setCopied(true);
+              } catch (error) {
+                console.error("Erro ao copiar:", error);
+              }
+            }}
+          >
+            <Link2 className="size-4" strokeWidth={1.5} />
+            <span className="sr-only">Copy remote URL</span>
+          </Button>
+        </div>
 
         <Button
           disabled={["canceled", "error"].includes(upload.status)}
