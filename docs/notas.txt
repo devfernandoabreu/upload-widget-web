@@ -7,3 +7,5 @@ pnpm i @radix-ui/react-progress
 pnpm i motion
 pnpm i zustand
 pnpm i immer
+pnpm i axios
+pnpm i @radix-ui/react-slot
